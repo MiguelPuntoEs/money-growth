@@ -16,7 +16,7 @@ def get_snb_data(table_id, params):
     return df
 
 
-def get_ecb_data(flowRef, key, date_format, parameters={}):
+def get_ecb_data(flowRef, key, parameters={}):
     entrypoint = 'https://sdw-wsrest.ecb.europa.eu/service/'  # Using protocol 'https'
     resource = 'data'           # The resource for data queries is always'data'
 
@@ -36,8 +36,8 @@ def get_ecb_data(flowRef, key, date_format, parameters={}):
         return None
 
     df = pd.read_csv(io.StringIO(response.text), parse_dates=[
-                     'TIME_PERIOD'], date_format={'TIME_PERIOD': date_format},
+                     'TIME_PERIOD'],
                      usecols=['TIME_PERIOD', 'OBS_VALUE'],
                      ).rename(columns={'TIME_PERIOD': 'Date', 'OBS_VALUE': 'Value'}).set_index('Date')
 
-    return df
+    return df['Value']

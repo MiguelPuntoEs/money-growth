@@ -2,7 +2,7 @@ import urllib
 import pandas as pd
 import requests
 import io
-
+import json
 
 def get_snb_data(table_id, params):
     url = f"https://data.snb.ch/api/cube/{table_id}/data/csv/en?" + \
@@ -41,3 +41,14 @@ def get_ecb_data(flowRef, key, parameters={}):
                      ).rename(columns={'TIME_PERIOD': 'Date', 'OBS_VALUE': 'Value'}).set_index('Date')
 
     return df['Value']
+
+def get_imf_indicators():
+    response = requests.get(
+        url="https://www.imf.org/external/datamapper/api/v1/indicators"
+    )
+    response_body = json.loads(response.text)
+    indicators = [
+        {"id": key, **values} for key, values in response_body["indicators"].items()
+    ]
+    indicators_df = pd.DataFrame.from_records(indicators)
+    return indicators_df

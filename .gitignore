@@ -3,3 +3,4 @@ data/m3-us.csv
 **/.venv
 **/__pycache__
 .env
+*.pickle

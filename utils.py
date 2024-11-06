@@ -4,6 +4,55 @@ import requests
 import io
 import json
 
+# https://www.nber.org/research/data/us-business-cycle-expansions-and-contractions
+df_recessions = pd.DataFrame([
+    [pd.Timestamp('1857-04-01'), pd.Timestamp('1858-10-01')],
+    [pd.Timestamp('1860-07-01'), pd.Timestamp('1861-07-01')],
+    [pd.Timestamp('1865-01-01'), pd.Timestamp('1867-01-01')],
+    [pd.Timestamp('1869-04-01'), pd.Timestamp('1870-10-01')],
+    [pd.Timestamp('1873-07-01'), pd.Timestamp('1879-01-01')],
+    [pd.Timestamp('1882-01-01'), pd.Timestamp('1885-04-01')],
+    [pd.Timestamp('1887-04-01'), pd.Timestamp('1888-01-01')],
+    [pd.Timestamp('1890-07-01'), pd.Timestamp('1891-04-01')],
+    [pd.Timestamp('1893-01-01'), pd.Timestamp('1894-04-01')],
+    [pd.Timestamp('1895-10-01'), pd.Timestamp('1897-04-01')],
+    [pd.Timestamp('1899-07-01'), pd.Timestamp('1900-10-01')],
+    [pd.Timestamp('1902-10-01'), pd.Timestamp('1904-07-01')],
+    [pd.Timestamp('1907-04-01'), pd.Timestamp('1908-04-01')],
+    [pd.Timestamp('1910-01-01'), pd.Timestamp('1911-10-01')],
+    [pd.Timestamp('1913-01-01'), pd.Timestamp('1914-10-01')],
+    [pd.Timestamp('1918-07-01'), pd.Timestamp('1919-01-01')],
+    [pd.Timestamp('1920-01-01'), pd.Timestamp('1921-07-01')],
+    [pd.Timestamp('1923-04-01'), pd.Timestamp('1924-07-01')],
+    [pd.Timestamp('1926-07-01'), pd.Timestamp('1927-10-01')],
+    [pd.Timestamp('1929-07-01'), pd.Timestamp('1933-01-01')],
+    [pd.Timestamp('1937-04-01'), pd.Timestamp('1938-04-01')],
+    [pd.Timestamp('1945-01-01'), pd.Timestamp('1945-10-01')],
+    [pd.Timestamp('1948-10-01'), pd.Timestamp('1949-10-01')],
+    [pd.Timestamp('1953-04-01'), pd.Timestamp('1954-04-01')],
+    [pd.Timestamp('1957-07-01'), pd.Timestamp('1958-04-01')],
+    [pd.Timestamp('1960-04-01'), pd.Timestamp('1961-01-01')],
+    [pd.Timestamp('1969-10-01'), pd.Timestamp('1970-10-01')],
+    [pd.Timestamp('1973-10-01'), pd.Timestamp('1975-01-01')],
+    [pd.Timestamp('1980-01-01'), pd.Timestamp('1980-07-01')],
+    [pd.Timestamp('1981-07-01'), pd.Timestamp('1982-10-01')],
+    [pd.Timestamp('1990-07-01'), pd.Timestamp('1991-01-01')],
+    [pd.Timestamp('2001-01-01'), pd.Timestamp('2001-10-01')],
+    [pd.Timestamp('2007-10-01'), pd.Timestamp('2009-04-01')],
+    [pd.Timestamp('2019-10-01'), pd.Timestamp('2020-04-01')]],
+    columns=['quarter_start', 'quarter_end'])
+
+
+def add_recessions(df):
+    df['recession'] = 0
+    for row in df_recessions.itertuples():
+        df.loc[row.quarter_start: row.quarter_end, 'recession'] = 1
+
+
+def plot_recessions(ax):
+    for row in df_recessions.itertuples():
+        ax.axvspan(row.quarter_start, row.quarter_end, facecolor='lightgray')
+
 
 def get_snb_data(table_id, params):
     url = f"https://data.snb.ch/api/cube/{table_id}/data/csv/en?" + \

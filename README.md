@@ -7,4 +7,4 @@ This repository aims to discover money growth influence on inflation. In order a
 
 ## More information
 
-The full Master's theis (in Spanish) and LaTeX sources can be check on [MECO-Hesperides-TFM](https://github.com/MiguelPuntoEs/MECO-Hesperides-TFM).
+The full Master's theis (in Spanish) and LaTeX sources can be checked on [MECO-Hesperides-TFM](https://github.com/MiguelPuntoEs/MECO-Hesperides-TFM).

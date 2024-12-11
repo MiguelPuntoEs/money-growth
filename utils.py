@@ -3,9 +3,10 @@ import pandas as pd
 import requests
 import io
 import json
+from typing import Final
 
 # https://www.nber.org/research/data/us-business-cycle-expansions-and-contractions
-df_recessions = pd.DataFrame([
+RECESSIONS_DATA: Final[pd.DataFrame] = pd.DataFrame([
     [pd.Timestamp('1857-04-01'), pd.Timestamp('1858-10-01')],
     [pd.Timestamp('1860-07-01'), pd.Timestamp('1861-07-01')],
     [pd.Timestamp('1865-01-01'), pd.Timestamp('1867-01-01')],
@@ -45,12 +46,12 @@ df_recessions = pd.DataFrame([
 
 def add_recessions(df):
     df['recession'] = 0
-    for row in df_recessions.itertuples():
+    for row in RECESSIONS_DATA.itertuples():
         df.loc[row.quarter_start: row.quarter_end, 'recession'] = 1
 
 
 def plot_recessions(ax):
-    for row in df_recessions.itertuples():
+    for row in RECESSIONS_DATA.itertuples():
         ax.axvspan(row.quarter_start, row.quarter_end, facecolor='lightgray')
 
 

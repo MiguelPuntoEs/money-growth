@@ -1,11 +1,9 @@
 from fredapi import Fred
 import pandas as pd
 
-from utils import get_boe_data, get_ecb_data, get_snb_data
+from utils import get_boe_data, get_ecb_data, get_snb_data, s_recession
 
 fred = Fred()
-
-s_recession: pd.Series = fred.get_series("USREC").rename("recession")
 
 
 def get_us_data() -> pd.DataFrame:

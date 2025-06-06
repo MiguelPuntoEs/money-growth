@@ -9,11 +9,12 @@ from fredapi import Fred
 from matplotlib.axes import Axes
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
-from data_preparation import s_recession
 
 fred = Fred()
+s_recession: pd.Series = fred.get_series("USREC").rename("recession")
 
-HEADERS: Final[Mapping[str, str]] = {"User-Agent": "MoneyGrowth"}
+
+HEADERS: Final[Mapping[str, str]] = {"User-Agent": "TestAgent/1.0"}
 
 
 def get_recession_periods(

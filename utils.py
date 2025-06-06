@@ -1,4 +1,4 @@
-import urllib
+import urllib.parse
 from matplotlib.figure import Figure
 import pandas as pd
 import requests
@@ -52,7 +52,7 @@ def plot_pct_change(df: pd.DataFrame, region: str) -> tuple[Figure, Axes]:
     ax.set_xlabel("")
     ax.set_ylabel("Annual change [%]")
 
-    ax.set_xlim([df["m3"].first_valid_index(), None])
+    ax.set_xlim((df["m3"].first_valid_index(), None))
 
     return fig, ax
 

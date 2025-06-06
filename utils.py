@@ -1,61 +1,59 @@
 import urllib
+from matplotlib.figure import Figure
 import pandas as pd
 import requests
 import io
 import json
-from typing import Final
+from typing import Final, Mapping
+from fredapi import Fred
+from matplotlib.axes import Axes
+import matplotlib.pyplot as plt
+import matplotlib.ticker as mtick
+from data_preparation import s_recession
 
-# https://www.nber.org/research/data/us-business-cycle-expansions-and-contractions
-RECESSIONS_DATA: Final[pd.DataFrame] = pd.DataFrame(
-    [
-        [pd.Timestamp("1857-04-01"), pd.Timestamp("1858-10-01")],
-        [pd.Timestamp("1860-07-01"), pd.Timestamp("1861-07-01")],
-        [pd.Timestamp("1865-01-01"), pd.Timestamp("1867-01-01")],
-        [pd.Timestamp("1869-04-01"), pd.Timestamp("1870-10-01")],
-        [pd.Timestamp("1873-07-01"), pd.Timestamp("1879-01-01")],
-        [pd.Timestamp("1882-01-01"), pd.Timestamp("1885-04-01")],
-        [pd.Timestamp("1887-04-01"), pd.Timestamp("1888-01-01")],
-        [pd.Timestamp("1890-07-01"), pd.Timestamp("1891-04-01")],
-        [pd.Timestamp("1893-01-01"), pd.Timestamp("1894-04-01")],
-        [pd.Timestamp("1895-10-01"), pd.Timestamp("1897-04-01")],
-        [pd.Timestamp("1899-07-01"), pd.Timestamp("1900-10-01")],
-        [pd.Timestamp("1902-10-01"), pd.Timestamp("1904-07-01")],
-        [pd.Timestamp("1907-04-01"), pd.Timestamp("1908-04-01")],
-        [pd.Timestamp("1910-01-01"), pd.Timestamp("1911-10-01")],
-        [pd.Timestamp("1913-01-01"), pd.Timestamp("1914-10-01")],
-        [pd.Timestamp("1918-07-01"), pd.Timestamp("1919-01-01")],
-        [pd.Timestamp("1920-01-01"), pd.Timestamp("1921-07-01")],
-        [pd.Timestamp("1923-04-01"), pd.Timestamp("1924-07-01")],
-        [pd.Timestamp("1926-07-01"), pd.Timestamp("1927-10-01")],
-        [pd.Timestamp("1929-07-01"), pd.Timestamp("1933-01-01")],
-        [pd.Timestamp("1937-04-01"), pd.Timestamp("1938-04-01")],
-        [pd.Timestamp("1945-01-01"), pd.Timestamp("1945-10-01")],
-        [pd.Timestamp("1948-10-01"), pd.Timestamp("1949-10-01")],
-        [pd.Timestamp("1953-04-01"), pd.Timestamp("1954-04-01")],
-        [pd.Timestamp("1957-07-01"), pd.Timestamp("1958-04-01")],
-        [pd.Timestamp("1960-04-01"), pd.Timestamp("1961-01-01")],
-        [pd.Timestamp("1969-10-01"), pd.Timestamp("1970-10-01")],
-        [pd.Timestamp("1973-10-01"), pd.Timestamp("1975-01-01")],
-        [pd.Timestamp("1980-01-01"), pd.Timestamp("1980-07-01")],
-        [pd.Timestamp("1981-07-01"), pd.Timestamp("1982-10-01")],
-        [pd.Timestamp("1990-07-01"), pd.Timestamp("1991-01-01")],
-        [pd.Timestamp("2001-01-01"), pd.Timestamp("2001-10-01")],
-        [pd.Timestamp("2007-10-01"), pd.Timestamp("2009-04-01")],
-        [pd.Timestamp("2019-10-01"), pd.Timestamp("2020-04-01")],
-    ],
-    columns=["quarter_start", "quarter_end"],
-)
+fred = Fred()
+
+HEADERS: Final[Mapping[str, str]] = {"User-Agent": "MoneyGrowth"}
 
 
-def add_recessions(df):
-    df["recession"] = 0
-    for row in RECESSIONS_DATA.itertuples():
-        df.loc[row.quarter_start : row.quarter_end, "recession"] = 1
+def get_recession_periods(
+    recession_series: pd.Series,
+) -> list[tuple[pd.Timestamp, pd.Timestamp]]:
+    """Convert a binary recession series into a list of (start, end) timestamp tuples."""
+    recession_series = recession_series.astype(bool)
+    shifted = recession_series.shift(1, fill_value=False)
+    starts = (recession_series & ~shifted).index[recession_series & ~shifted]
+    ends = (~recession_series & shifted).index[~recession_series & shifted]
+
+    # Handle case where series ends during a recession
+    if len(ends) < len(starts):
+        ends = ends.append(pd.Index([recession_series.index[-1]]))
+
+    return list(zip(starts, ends))
 
 
-def plot_recessions(ax):
-    for row in RECESSIONS_DATA.itertuples():
-        ax.axvspan(row.quarter_start, row.quarter_end, facecolor="lightgray")
+def plot_recessions(ax: Axes):
+    """Plot recession periods on the given axis."""
+    recession_periods = get_recession_periods(s_recession)
+    for period in recession_periods:
+        ax.axvspan(period[0], period[1], facecolor="lightgray")
+
+
+def plot_pct_change(df: pd.DataFrame, region: str) -> tuple[Figure, Axes]:
+    fig, ax = plt.subplots()
+
+    df[["m3", "gdp", "v"]].pct_change(periods=12, fill_method=None).plot(ax=ax)
+    plot_recessions(ax)
+
+    ax.set_title(region)
+    ax.yaxis.set_major_formatter(mtick.PercentFormatter(1.0))
+    ax.grid(which="major", axis="y", linestyle="--")  #  or both
+    ax.set_xlabel("")
+    ax.set_ylabel("Annual change [%]")
+
+    ax.set_xlim([df["m3"].first_valid_index(), None])
+
+    return fig, ax
 
 
 def get_snb_data(table_id, params):
@@ -107,7 +105,6 @@ def get_boe_data(series_codes):
 
     params = {
         "Datefrom": "01/Jan/1963",
-        "Dateto": "01/Dec/2024",
         "SeriesCodes": series_codes,  # ','.join(series_codes)
         "CSVF": "TN",
         "UsingCodes": "Y",
@@ -117,13 +114,7 @@ def get_boe_data(series_codes):
 
     url = url_endpoint + "&" + urllib.parse.urlencode(params, safe="()")
 
-    headers = {
-        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/54.0.2840.90 "
-        "Safari/537.36"
-    }
-    df = pd.read_csv(url, storage_options=headers, parse_dates=["DATE"])
+    df = pd.read_csv(url, storage_options=HEADERS, parse_dates=["DATE"])
     df.rename(columns={"DATE": "Date"}, inplace=True)
 
     # Always returns last day of the month

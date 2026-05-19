@@ -5,11 +5,13 @@ import requests
 import io
 import json
 from typing import Final, Mapping
+from dotenv import load_dotenv
 from fredapi import Fred
 from matplotlib.axes import Axes
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 
+load_dotenv()
 fred = Fred()
 s_recession: pd.Series = fred.get_series("USREC").rename("recession")
 
@@ -68,7 +70,7 @@ def get_snb_data(table_id, params):
 
 
 def get_ecb_data(flowRef, key, parameters={}):
-    entrypoint = "https://sdw-wsrest.ecb.europa.eu/service/"  # Using protocol 'https'
+    entrypoint = "https://data-api.ecb.europa.eu/service/"
     resource = "data"  # The resource for data queries is always'data'
 
     # Define the parameters

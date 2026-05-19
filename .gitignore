@@ -1,6 +1,7 @@
 .DS_Store
-data/m3-us.csv
 **/.venv
 **/__pycache__
 .env
 *.pickle
+private/*
+!private/.gitkeep

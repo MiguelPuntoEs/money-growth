@@ -6,13 +6,37 @@ from utils import get_boe_data, get_ecb_data, get_snb_data, s_recession
 fred = Fred()
 
 
+US_M3_XLSX = "private/USA WMM 2603 260320 TC-1.xlsx"
+_MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+
+def _load_us_m3() -> pd.Series:
+    """Parse the discontinued FRED M3 series + ShadowStats extension from xlsx.
+
+    Layout: year column populated only on Jan rows; month name in next col; M3 level in next.
+    """
+    df = pd.read_excel(
+        US_M3_XLSX,
+        sheet_name="Sheet1",
+        skiprows=19,
+        usecols=[1, 2, 3],
+        names=["year", "month", "m3"],
+    )
+    df["year"] = pd.to_numeric(df["year"], errors="coerce").ffill().astype(int)
+    df["month"] = df["month"].astype(str).str.strip()
+    df = df[df["month"].isin(_MONTH_NAMES)].dropna(subset=["m3"]).copy()
+    df["Date"] = pd.to_datetime(
+        df["year"].astype(str) + "-" + df["month"], format="%Y-%b"
+    )
+    return df.set_index("Date")["m3"].astype(float).sort_index().rename("m3")
+
+
 def get_us_data() -> pd.DataFrame:
     """Fetch and prepare US economic data for analysis."""
 
     # M3: Monthly data, USD billions
-    s_m3 = pd.read_csv(
-        "data/m3-us.csv", sep=";", parse_dates=["Date"], index_col="Date"
-    )["m3"]
+    s_m3 = _load_us_m3()
     # GDP: Quarterly data transformed to monthly
     s_gdp = fred.get_series("GDP").rename("gdp").resample("MS").ffill()
     # CPI: Monthly data
